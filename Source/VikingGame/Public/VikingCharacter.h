@@ -8,6 +8,7 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class UHealthComponent;
 
 UCLASS()
 class VIKINGGAME_API AVikingCharacter : public ACharacter
@@ -27,6 +28,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	USpringArmComponent* SpringArmComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Health")
+	UHealthComponent* HealthComp;
 
 	void MoveForward(float Value);
 
