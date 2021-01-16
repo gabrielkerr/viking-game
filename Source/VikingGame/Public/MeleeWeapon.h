@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "MeleeWeapon.generated.h"
 
-class USkeletalMeshComponent;
+class UStaticMeshComponent;
 class USphereComponent;
 class UCapsuleComponent;
 
@@ -25,7 +25,7 @@ protected:
 
 	// For skeletal mesh of weapon
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
-	USkeletalMeshComponent* SkeletalMeshComp;
+	UStaticMeshComponent* MeshComp;
 
 	// Root of the weapon to attach to character
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
@@ -37,6 +37,9 @@ protected:
 
 	// TODO Deal damage
 	// TODO On overlap
+	UFUNCTION()
+	void HandleOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+		bool bFromSweep, const FHitResult& SweepResult);
 	// TODO Attack
 	// NOTE Weapon could be a spear for now until better animations come in
 

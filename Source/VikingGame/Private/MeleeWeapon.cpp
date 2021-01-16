@@ -2,7 +2,7 @@
 
 
 #include "MeleeWeapon.h"
-#include "Components/SkeletalMeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
 
@@ -16,8 +16,10 @@ AMeleeWeapon::AMeleeWeapon()
 	RootComponent = SphereComp;
 
 	CapsuleComp = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComp"));
+	CapsuleComp->AttachTo(RootComponent);
 
-	SkeletalMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComp"));
+	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
+	MeshComp->AttachTo(RootComponent);
 
 }
 
@@ -25,7 +27,20 @@ AMeleeWeapon::AMeleeWeapon()
 void AMeleeWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	AActor* MyOwner = GetOwner();
+
+	if (MyOwner)
+	{
+		CapsuleComp->IgnoreActorWhenMoving(MyOwner, true);
+	}
+
+	CapsuleComp->OnComponentBeginOverlap.AddDynamic(this, &AMeleeWeapon::HandleOverlap);
+}
+
+void AMeleeWeapon::HandleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	UE_LOG(LogTemp, Log, TEXT("Overlapped with weapon!"));
 }
 
 // Called every frame

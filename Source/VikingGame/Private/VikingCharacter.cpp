@@ -6,6 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 
 #include "HealthComponent.h"
+#include "MeleeWeapon.h"
 
 // Sets default values
 AVikingCharacter::AVikingCharacter()
@@ -22,12 +23,29 @@ AVikingCharacter::AVikingCharacter()
 
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 
+	WeaponSocketName = "WeaponSocket";
+
 }
 
 // Called when the game starts or when spawned
 void AVikingCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Spawn Weapon
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	CurrentWeapon = GetWorld()->SpawnActor<AMeleeWeapon>(StarterWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+
+	// Snap weapon to socket on mesh
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->SetOwner(this);
+		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
+	}
+
+	//HealthComponent->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
 	
 }
 

@@ -9,6 +9,7 @@
 class UCameraComponent;
 class USpringArmComponent;
 class UHealthComponent;
+class AMeleeWeapon;
 
 UCLASS()
 class VIKINGGAME_API AVikingCharacter : public ACharacter
@@ -31,6 +32,14 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
 	UHealthComponent* HealthComp;
+
+	AMeleeWeapon* CurrentWeapon;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TSubclassOf<AMeleeWeapon> StarterWeaponClass;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon")
+	FName WeaponSocketName;
 
 	void MoveForward(float Value);
 
