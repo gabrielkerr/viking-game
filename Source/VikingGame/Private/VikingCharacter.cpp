@@ -24,6 +24,7 @@ AVikingCharacter::AVikingCharacter()
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 
 	WeaponSocketName = "WeaponSocket";
+	bAttacking = false;
 
 }
 
@@ -67,6 +68,9 @@ void AVikingCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	PlayerInputComponent->BindAxis("LookAround", this, &ACharacter::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &ACharacter::AddControllerPitchInput);
+
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AVikingCharacter::Attack);
+	// TODO Set jump. Make sure jump looks natural does(n't?) loop
 }
 
 void AVikingCharacter::MoveForward(float Value)
@@ -77,4 +81,31 @@ void AVikingCharacter::MoveForward(float Value)
 void AVikingCharacter::MoveRight(float Value)
 {
 	AddMovementInput(GetActorRightVector(), Value);
+}
+
+void AVikingCharacter::Attack()
+{
+	if (AttackAnim && !bAttacking)
+	{
+		// TODO Should probably do this all in animation blueprint
+		// Add Attack node to ABP
+		// Set variable bAttacking
+		bAttacking = true;
+		// Transition from walk and idle to Attack based on bAttacking 
+		// Use TimerHandle to delay resetting bAttacking to false.
+		bAttacking = false;
+
+		UE_LOG(LogTemp, Log, TEXT("ATTACK!"));
+		GetMesh()->SetAnimation(AttackAnim);
+		GetMesh()->PlayAnimation(AttackAnim, false);
+
+		// TODO Set timer delay
+
+		// Return to animation blueprint for animations
+		//GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("No attack animation assigned!"));
+	}
 }
