@@ -16,10 +16,10 @@ AMeleeWeapon::AMeleeWeapon()
 	RootComponent = SphereComp;
 
 	CapsuleComp = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleComp"));
-	CapsuleComp->AttachTo(RootComponent);
+	CapsuleComp->SetupAttachment(RootComponent);
 
 	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp"));
-	MeshComp->AttachTo(RootComponent);
+	MeshComp->SetupAttachment(RootComponent);
 
 }
 
@@ -40,7 +40,14 @@ void AMeleeWeapon::BeginPlay()
 
 void AMeleeWeapon::HandleOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogTemp, Log, TEXT("Overlapped with weapon!"));
+	AActor* MyOwner = GetOwner();
+
+	// TODO Probably a better way to avoid colliding with owner by ignoring a specific collision channel...
+	if (OtherActor != MyOwner)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Overlapped with weapon!"));
+		// TODO Apply damage to actor
+	}
 }
 
 // Called every frame

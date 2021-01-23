@@ -4,6 +4,7 @@
 #include "VikingCharacter.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "HealthComponent.h"
 #include "MeleeWeapon.h"
@@ -46,6 +47,7 @@ void AVikingCharacter::BeginPlay()
 		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
 	}
 
+
 	//HealthComponent->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
 	
 }
@@ -69,43 +71,46 @@ void AVikingCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis("LookAround", this, &ACharacter::AddControllerYawInput);
 	PlayerInputComponent->BindAxis("LookUp", this, &ACharacter::AddControllerPitchInput);
 
-	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AVikingCharacter::Attack);
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AVikingCharacter::BeginAttack);
 	// TODO Set jump. Make sure jump looks natural does(n't?) loop
 }
 
 void AVikingCharacter::MoveForward(float Value)
 {
-	AddMovementInput(GetActorForwardVector(), Value);
+	if (!bAttacking)
+	{
+		AddMovementInput(GetActorForwardVector(), Value);
+	}
 }
 
 void AVikingCharacter::MoveRight(float Value)
 {
-	AddMovementInput(GetActorRightVector(), Value);
+	if (!bAttacking)
+	{
+		AddMovementInput(GetActorRightVector(), Value);
+	}
 }
 
-void AVikingCharacter::Attack()
+void AVikingCharacter::BeginAttack()
 {
-	if (AttackAnim && !bAttacking)
+	if (bAttacking)
 	{
-		// TODO Should probably do this all in animation blueprint
-		// Add Attack node to ABP
+		return;
+	}
+	else 
+	{
 		// Set variable bAttacking
 		bAttacking = true;
-		// Transition from walk and idle to Attack based on bAttacking 
+
 		// Use TimerHandle to delay resetting bAttacking to false.
-		bAttacking = false;
+		GetWorldTimerManager().SetTimer(TimerHandle_AttackDuration, this, &AVikingCharacter::EndAttack, 0.1, false, 1.0f);
 
 		UE_LOG(LogTemp, Log, TEXT("ATTACK!"));
-		GetMesh()->SetAnimation(AttackAnim);
-		GetMesh()->PlayAnimation(AttackAnim, false);
-
-		// TODO Set timer delay
-
-		// Return to animation blueprint for animations
-		//GetMesh()->SetAnimationMode(EAnimationMode::AnimationBlueprint);
 	}
-	else
-	{
-		UE_LOG(LogTemp, Log, TEXT("No attack animation assigned!"));
-	}
+}
+
+void AVikingCharacter::EndAttack()
+{
+	bAttacking = false;
+	GetWorldTimerManager().ClearTimer(TimerHandle_AttackDuration);
 }

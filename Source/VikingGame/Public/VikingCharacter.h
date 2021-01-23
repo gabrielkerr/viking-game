@@ -41,17 +41,18 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon")
 	FName WeaponSocketName;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Animation")
-	UAnimSequence* AttackAnim;
-
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bAttacking;
+
+	FTimerHandle TimerHandle_AttackDuration;
 
 	void MoveForward(float Value);
 
 	void MoveRight(float Value);
 
-	void Attack();
+	void BeginAttack();
+
+	void EndAttack();
 
 public:	
 	// Called every frame
