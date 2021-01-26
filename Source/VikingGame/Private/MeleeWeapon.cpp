@@ -2,9 +2,15 @@
 
 
 #include "MeleeWeapon.h"
+#include "VikingCharacter.h"
+
 #include "Components/StaticMeshComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Particles/ParticleSystem.h"
+#include "kismet/GameplayStatics.h"
+
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AMeleeWeapon::AMeleeWeapon()
@@ -46,7 +52,17 @@ void AMeleeWeapon::HandleOverlap(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	if (OtherActor != MyOwner)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Overlapped with weapon!"));
-		// TODO Apply damage to actor
+
+		// Apply damage to actor
+		AVikingCharacter* OtherCharacter = Cast<AVikingCharacter>(OtherActor);
+		if (OtherCharacter)
+		{
+			UGameplayStatics::ApplyDamage(OtherActor, 20.0F, MyOwner->GetInstigatorController(), MyOwner, DamageType);
+			if (WeaponHitEffect)
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponHitEffect, MeshComp->GetComponentLocation(), MeshComp->GetComponentRotation());
+			}
+		}
 	}
 }
 
@@ -55,5 +71,15 @@ void AMeleeWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+// AttackDuration - How long the current attack should take. Pass back to caller for timers.
+void AMeleeWeapon::BeginAttack(float &AttackDuration)
+{
+	AttackDuration = 1.0F;
+}
+
+void AMeleeWeapon::EndAttack()
+{
 }
 

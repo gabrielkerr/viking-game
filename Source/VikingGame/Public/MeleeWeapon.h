@@ -7,8 +7,9 @@
 #include "MeleeWeapon.generated.h"
 
 class UStaticMeshComponent;
-class USphereComponent;
 class UCapsuleComponent;
+class USphereComponent;
+class UParticleSystem;
 
 UCLASS()
 class VIKINGGAME_API AMeleeWeapon : public AActor
@@ -35,17 +36,24 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Components")
 	UCapsuleComponent* CapsuleComp;
 
-	// TODO Deal damage
-	// TODO On overlap
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	TSubclassOf<UDamageType> DamageType;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+	UParticleSystem* WeaponHitEffect;
+
+	// On overlap
 	UFUNCTION()
 	void HandleOverlap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 		bool bFromSweep, const FHitResult& SweepResult);
 
-	// TODO Attack
-	// NOTE Weapon could be a spear for now until better animations come in
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	void BeginAttack(float &AttackDuration);
+
+	void EndAttack();
 
 };

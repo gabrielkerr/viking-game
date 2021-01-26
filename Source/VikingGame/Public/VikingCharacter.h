@@ -44,6 +44,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bAttacking;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	bool bDied;
+
 	FTimerHandle TimerHandle_AttackDuration;
 
 	void MoveForward(float Value);
@@ -53,6 +56,10 @@ protected:
 	void BeginAttack();
 
 	void EndAttack();
+
+	UFUNCTION()
+	void OnHealthChanged(UHealthComponent* ActorHealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
+
 
 public:	
 	// Called every frame

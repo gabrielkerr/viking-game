@@ -3,6 +3,7 @@
 
 #include "VikingCharacter.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -26,6 +27,7 @@ AVikingCharacter::AVikingCharacter()
 
 	WeaponSocketName = "WeaponSocket";
 	bAttacking = false;
+	bDied = false;
 
 }
 
@@ -48,7 +50,7 @@ void AVikingCharacter::BeginPlay()
 	}
 
 
-	//HealthComponent->OnHealthChanged.AddDynamic(this, &ASCharacter::OnHealthChanged);
+	HealthComp->OnHealthChanged.AddDynamic(this, &AVikingCharacter::OnHealthChanged);
 	
 }
 
@@ -97,20 +99,43 @@ void AVikingCharacter::BeginAttack()
 	{
 		return;
 	}
-	else 
+	else if (CurrentWeapon)
 	{
 		// Set variable bAttacking
 		bAttacking = true;
+		float AttackDuration = 0.0F;
+		CurrentWeapon->BeginAttack(AttackDuration);
 
 		// Use TimerHandle to delay resetting bAttacking to false.
-		GetWorldTimerManager().SetTimer(TimerHandle_AttackDuration, this, &AVikingCharacter::EndAttack, 0.1, false, 1.0f);
+		GetWorldTimerManager().SetTimer(TimerHandle_AttackDuration, this, &AVikingCharacter::EndAttack, 0.1, false, AttackDuration);
 
 		UE_LOG(LogTemp, Log, TEXT("ATTACK!"));
 	}
 }
 
+// TODO Ideally, would like to set up a notification when attack animation ends.
 void AVikingCharacter::EndAttack()
 {
 	bAttacking = false;
 	GetWorldTimerManager().ClearTimer(TimerHandle_AttackDuration);
+}
+
+void AVikingCharacter::OnHealthChanged(UHealthComponent* ActorHealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	UE_LOG(LogTemp, Log, TEXT("Health changed!"));
+	if (Health <= 0.0F && !bDied)
+	{
+		// TODO Set up death animation
+		UE_LOG(LogTemp, Log, TEXT("DIED!"));
+		bDied = true;
+
+		GetMovementComponent()->StopMovementImmediately();
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		// Disable any player input to the character
+		DetachFromControllerPendingDestroy();
+
+		// Destroy player object after 10 seconds
+		SetLifeSpan(10.0F);
+	}
 }
