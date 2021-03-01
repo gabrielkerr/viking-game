@@ -10,6 +10,16 @@ class UCameraComponent;
 class USpringArmComponent;
 class UHealthComponent;
 class AMeleeWeapon;
+class AShield;
+
+UENUM(BlueprintType)
+enum class EMovementState : uint8
+{
+	EMS_Normal UMETA(DisplayName = "Normal"),
+	EMS_Sprinting UMETA(DisplayName = "Sprinting"),
+
+	EMS_MAX UMETA(DisplayName = "DefaultMax")
+};
 
 UCLASS()
 class VIKINGGAME_API AVikingCharacter : public ACharacter
@@ -24,10 +34,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* CameraComp;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* SpringArmComp;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Health")
@@ -41,11 +51,25 @@ protected:
 	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon")
 	FName WeaponSocketName;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Shield")
+	TSubclassOf<AShield> ShieldClass;
+
+	AShield* Shield;
+
+	UPROPERTY(VisibleDefaultsOnly, Category = "Shield")
+	FName ShieldSocketName;
+
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bAttacking;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bDied;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Animation")
+	bool bShiftKeyDown;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	EMovementState MovementState;
 
 	FTimerHandle TimerHandle_AttackDuration;
 
@@ -68,4 +92,10 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+protected:
+	void ShiftKeyPressed();
+
+	void ShiftKeyReleased();
+
+	void SetCharacterMovementState(EMovementState State);
 };

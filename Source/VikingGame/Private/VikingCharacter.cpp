@@ -9,6 +9,7 @@
 
 #include "HealthComponent.h"
 #include "MeleeWeapon.h"
+#include "Shield.h"
 
 // Sets default values
 AVikingCharacter::AVikingCharacter()
@@ -17,7 +18,8 @@ AVikingCharacter::AVikingCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComp"));
-	SpringArmComp->bUsePawnControlRotation = true; // NOTE uncomment this if we want camera rotation to stay fixed
+	SpringArmComp->bUsePawnControlRotation = true; 
+	SpringArmComp->bEnableCameraLag = true;
 	SpringArmComp->SetupAttachment(RootComponent);
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
@@ -25,9 +27,24 @@ AVikingCharacter::AVikingCharacter()
 
 	HealthComp = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComp"));
 
+	// Don't apply rotation to character mesh, camera boom only
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationYaw = false;
+	bUseControllerRotationRoll = false;
+
+	// Configure character movement and rotation 
+	GetCharacterMovement()->bOrientRotationToMovement = true; // Allow mesh to rotate according to movement input...
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 540.f, 0.f); // ...at this rotation rate
+	GetCharacterMovement()->JumpZVelocity = 525.f;
+	GetCharacterMovement()->AirControl = 0.2f; // Value < 1.0 allows limited movement control in the air
+
 	WeaponSocketName = "WeaponSocket";
+	ShieldSocketName = "ShieldSocket";
 	bAttacking = false;
 	bDied = false;
+	bShiftKeyDown = false;
+
+	MovementState = EMovementState::EMS_Normal;
 
 }
 
@@ -41,6 +58,7 @@ void AVikingCharacter::BeginPlay()
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	CurrentWeapon = GetWorld()->SpawnActor<AMeleeWeapon>(StarterWeaponClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	Shield = GetWorld()->SpawnActor<AShield>(ShieldClass, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
 
 	// Snap weapon to socket on mesh
 	if (CurrentWeapon)
@@ -49,6 +67,11 @@ void AVikingCharacter::BeginPlay()
 		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocketName);
 	}
 
+	if (Shield)
+	{
+		Shield->SetOwner(this);
+		Shield->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, ShieldSocketName);
+	}
 
 	HealthComp->OnHealthChanged.AddDynamic(this, &AVikingCharacter::OnHealthChanged);
 	
@@ -58,6 +81,17 @@ void AVikingCharacter::BeginPlay()
 void AVikingCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bShiftKeyDown)
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 950.0;
+		SetCharacterMovementState(EMovementState::EMS_Sprinting);
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = 650.0;
+		SetCharacterMovementState(EMovementState::EMS_Normal);
+	}
 
 }
 
@@ -74,22 +108,34 @@ void AVikingCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis("LookUp", this, &ACharacter::AddControllerPitchInput);
 
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AVikingCharacter::BeginAttack);
-	// TODO Set jump. Make sure jump looks natural does(n't?) loop
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+
+	// TODO update sprinting in AnimBP to not use sprint animation if not moving
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &AVikingCharacter::ShiftKeyPressed);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &AVikingCharacter::ShiftKeyReleased);
 }
 
 void AVikingCharacter::MoveForward(float Value)
 {
-	if (!bAttacking)
+	if ((!bAttacking) && (Controller != nullptr))
 	{
-		AddMovementInput(GetActorForwardVector(), Value);
+		// Find which direction is forward based on character's local axes
+		FRotator CharacterRotation = Controller->GetControlRotation();
+		FRotator CharacterYaw(0.f, CharacterRotation.Yaw, 0.f);
+		FVector MovementDirection = FRotationMatrix(CharacterYaw).GetUnitAxis(EAxis::X);
+		AddMovementInput(MovementDirection, Value);
 	}
 }
 
 void AVikingCharacter::MoveRight(float Value)
 {
-	if (!bAttacking)
+	if ((!bAttacking) && (Controller != nullptr))
 	{
-		AddMovementInput(GetActorRightVector(), Value);
+		FRotator CharacterRotation = Controller->GetControlRotation();
+		FRotator CharacterYaw = FRotator(0.f, CharacterRotation.Yaw, 0.f);
+		FVector MovementDirection = FRotationMatrix(CharacterYaw).GetUnitAxis(EAxis::Y);
+		AddMovementInput(MovementDirection, Value);
 	}
 }
 
@@ -138,4 +184,20 @@ void AVikingCharacter::OnHealthChanged(UHealthComponent* ActorHealthComp, float 
 		// Destroy player object after 10 seconds
 		SetLifeSpan(10.0F);
 	}
+}
+
+void AVikingCharacter::ShiftKeyPressed()
+{
+	bShiftKeyDown = true;
+}
+
+void AVikingCharacter::ShiftKeyReleased()
+{
+	bShiftKeyDown = false;
+}
+
+
+void AVikingCharacter::SetCharacterMovementState(EMovementState State)
+{
+	MovementState = State;
 }

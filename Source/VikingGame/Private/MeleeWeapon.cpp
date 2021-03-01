@@ -49,6 +49,7 @@ void AMeleeWeapon::HandleOverlap(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	AActor* MyOwner = GetOwner();
 
 	// TODO Probably a better way to avoid colliding with owner by ignoring a specific collision channel...
+	// TODO Get isAttacking from owner to determine if overlap should happen or else accidental pokes will happen.
 	if (OtherActor != MyOwner)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Overlapped with weapon!"));
