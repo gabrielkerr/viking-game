@@ -21,6 +21,17 @@ enum class EMovementState : uint8
 	EMS_MAX UMETA(DisplayName = "DefaultMax")
 };
 
+UENUM(BlueprintType)
+enum class EStaminaState : uint8
+{
+	ESS_Normal UMETA(DisplayName = "Normal"),
+	ESS_MinimumThreshold UMETA(DisplayName = "MinimumThreshold"),
+	ESS_Exhausted UMETA(DisplayName = "Exhausted"),
+	ESS_ExhaustedRecovering UMETA(DisplayName = "ExhaustedRecovering"),
+
+	ESS_MAX UMETA(DisplayName = "DefaultMax")
+};
+
 UCLASS()
 class VIKINGGAME_API AVikingCharacter : public ACharacter
 {
@@ -68,10 +79,35 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Animation")
 	bool bShiftKeyDown;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	UPROPERTY(BlueprintReadOnly, Category = "Enums")
 	EMovementState MovementState;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Enums")
+	EStaminaState StaminaState;
+
 	FTimerHandle TimerHandle_AttackDuration;
+
+	float MaxWalkSpeed;
+
+	float MaxSprintSpeed;
+
+	// Maximum stamina for the player
+	UPROPERTY(BlueprintReadOnly, Category = "Stamina")
+	float MaxStamina;
+
+	// Current stamina for the player
+	UPROPERTY(BlueprintReadOnly, Category = "Stamina")
+	float Stamina;
+
+	// Current stamina for the player
+	UPROPERTY(BlueprintReadOnly, Category = "Stamina")
+	float MinimumStaminaThreshold;
+
+	// Measured in units per second
+	float StaminaDrainRate;
+
+	// Measured in units per second
+	float StaminaRecoveryRate;
 
 	void MoveForward(float Value);
 
@@ -97,5 +133,7 @@ protected:
 
 	void ShiftKeyReleased();
 
-	void SetCharacterMovementState(EMovementState State);
+	void SetCharacterMovementState(const EMovementState State);
+
+	void SetCharacterStaminaState(const EStaminaState State);
 };

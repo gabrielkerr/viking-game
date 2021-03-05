@@ -45,7 +45,16 @@ AVikingCharacter::AVikingCharacter()
 	bShiftKeyDown = false;
 
 	MovementState = EMovementState::EMS_Normal;
+	StaminaState = EStaminaState::ESS_Normal;
 
+	MaxWalkSpeed = 650.f;
+	MaxSprintSpeed = 950.f;
+
+	MaxStamina = 200.f;
+	Stamina = MaxStamina;
+	MinimumStaminaThreshold = 40.f;
+	StaminaDrainRate = 40.f;
+	StaminaRecoveryRate = 40.f;
 }
 
 // Called when the game starts or when spawned
@@ -82,15 +91,117 @@ void AVikingCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (bShiftKeyDown)
+	// Handle stamina state
+	switch (StaminaState)
 	{
-		GetCharacterMovement()->MaxWalkSpeed = 950.0;
-		SetCharacterMovementState(EMovementState::EMS_Sprinting);
-	}
-	else
-	{
-		GetCharacterMovement()->MaxWalkSpeed = 650.0;
-		SetCharacterMovementState(EMovementState::EMS_Normal);
+		case EStaminaState::ESS_Normal:
+			if (bShiftKeyDown)
+			{
+				Stamina -= StaminaDrainRate * DeltaTime;
+
+				// If stamina is less than min threshold, change state
+				if (Stamina <= MinimumStaminaThreshold)
+				{
+					SetCharacterStaminaState(EStaminaState::ESS_MinimumThreshold);
+				}
+				// Otherwise, stamina is still high. Continue as normal.
+				GetCharacterMovement()->MaxWalkSpeed = MaxSprintSpeed;
+				SetCharacterMovementState(EMovementState::EMS_Sprinting);
+			}
+			else
+			{
+				// Recover stamina up to the max.
+				Stamina += StaminaRecoveryRate * DeltaTime;
+
+				if (Stamina > MaxStamina)
+				{
+					Stamina = MaxStamina;
+				}
+
+				GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+				SetCharacterMovementState(EMovementState::EMS_Normal);
+			}
+			break;
+		case EStaminaState::ESS_MinimumThreshold:
+			if (bShiftKeyDown)
+			{
+				Stamina -= StaminaDrainRate * DeltaTime;
+
+				if (Stamina <= 0.f)
+				{
+					// If stamina is depleted, we are exhausted 
+					SetCharacterStaminaState(EStaminaState::ESS_Exhausted);
+					GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+					SetCharacterMovementState(EMovementState::EMS_Normal);
+				}
+				else
+				{
+					// Otherwise, stamina to burn. Continue as normal.
+					GetCharacterMovement()->MaxWalkSpeed = MaxSprintSpeed;
+					SetCharacterMovementState(EMovementState::EMS_Sprinting);
+				}
+			}
+			else
+			{
+				// Recover stamina. 
+				Stamina += StaminaRecoveryRate * DeltaTime;
+
+				if (Stamina > MinimumStaminaThreshold)
+				{
+					// Set stamina to normal if above minimum threshold.
+					SetCharacterStaminaState(EStaminaState::ESS_Normal);
+				}
+
+				GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+				SetCharacterMovementState(EMovementState::EMS_Normal);
+			}
+			break;
+		case EStaminaState::ESS_Exhausted:
+			if (bShiftKeyDown)
+			{
+				// Stamina does not recover.
+				Stamina = 0.f;
+				SetCharacterStaminaState(EStaminaState::ESS_Exhausted);
+			}
+			else
+			{
+				// Recover stamina. 
+				Stamina += StaminaRecoveryRate * DeltaTime;
+
+				if (Stamina > 0.f)
+				{
+					// Set stamina to normal if above 0. 
+					SetCharacterStaminaState(EStaminaState::ESS_ExhaustedRecovering);
+				}
+			}
+			GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+			SetCharacterMovementState(EMovementState::EMS_Normal);
+			break;
+		case EStaminaState::ESS_ExhaustedRecovering:
+			if (bShiftKeyDown)
+			{
+				// Stamina doesn't change.
+				GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+				SetCharacterMovementState(EMovementState::EMS_Normal);
+				SetCharacterStaminaState(EStaminaState::ESS_ExhaustedRecovering);
+			}
+			else
+			{
+				// Recover stamina. 
+				Stamina += StaminaRecoveryRate * DeltaTime;
+
+				if (Stamina > MinimumStaminaThreshold)
+				{
+					// Set stamina to normal if above minimum threshold.
+					SetCharacterStaminaState(EStaminaState::ESS_Normal);
+				}
+
+				GetCharacterMovement()->MaxWalkSpeed = MaxWalkSpeed;
+				SetCharacterMovementState(EMovementState::EMS_Normal);
+			}
+			break;
+		default:
+			break;
 	}
 
 }
@@ -197,7 +308,12 @@ void AVikingCharacter::ShiftKeyReleased()
 }
 
 
-void AVikingCharacter::SetCharacterMovementState(EMovementState State)
+void AVikingCharacter::SetCharacterMovementState(const EMovementState State)
 {
 	MovementState = State;
+}
+
+void AVikingCharacter::SetCharacterStaminaState(const EStaminaState State)
+{
+	StaminaState = State;
 }
